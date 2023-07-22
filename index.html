@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNP Match</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body{
+            font-family:'Courier New';
+           
+        }
+        .nucleotide-set-td{
+            padding-right:10px;
+         
+          
+        }
+        .hidden-row{
+            height:10px;
+            background:#ccc;
+
+        }
+        .bold{
+            font-weight:bold;
+        }
+        .text-red-500{
+            color:#f56565;
+        }
+        td * { margin: 0px; }
+        table { table-layout: fixed; }
+        .snp-row td{
+           
+            max-width:12px;
+        }
+    </style>
+</head>
+<body>
+   
+    
+    <label>Fetch the following gene:</label>
+    <br/>
+    <input type="text" value="ABCB1" id="geneName"/>
+    <br/>
+
+
+    <div id="output_table"></div>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script>
+
+    function getGeneByName(geneName){
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=human[orgn],ABCB1[title]&rettype=json&retmode=json`,
+            type: "GET",
+            dataType: "JSON",
+            success: function(response){
+                console.log(response);
+                const geneId = response.esearchresult.idlist[0];
+                console.log('Associated id... ', geneId);
+                getGeneSummaryById(geneId,geneName);
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    getGeneByName($("#geneName").val());
+
+
+    function getGeneSummaryById(geneId,geneName){
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&id=${geneId}&rettype=json&retmode=json`,
+            type: "GET",
+            dataType: "JSON",
+            success: function(response){
+              
+                const geneObj = response.result[geneId];
+                console.log(geneObj);
+
+                const summary = geneObj.summary;
+                const description = geneObj.description;
+                console.log('Summary... ', description);
+
+                const chrStartPosition = geneObj.chrstart;
+                console.log('Start position... ', chrStartPosition);
+
+                const genomicInfo = geneObj.genomicinfo[0];
+                const geneStart = genomicInfo.chrstop;
+                const geneEnd = genomicInfo.chrstart;
+
+                console.log(chrStartPosition, geneStart, geneEnd, geneEnd-geneStart, chrStartPosition-geneStart);
+
+                const relativeStart = chrStartPosition-geneStart;
+                const relativeEnd = geneEnd-chrStartPosition;
+                
+                //const relativeStartPosition = genomicInfo.chrstart;
+                getFASTANucleotideSeqByNamePos(
+                    {
+                        nuccoreId: genomicInfo.chraccver,
+                        geneId: geneId,
+                        geneName: geneName,
+                        absoluteGeneStart: geneStart
+                    },geneStart+1,geneEnd+1);
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    var exceededRowCount = 0;
+    function getFASTANucleotideSeqByNamePos(geneInfo,startPosition,endPosition){
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${geneInfo.nuccoreId}&rettype=genbank&retmode=text&from=${startPosition}&to=${endPosition}`,
+            type: "GET",
+            dataType: "text",
+            success: function(response){
+                const originIndex = response.indexOf("ORIGIN");
+                const cleanResponse = response.substring(originIndex+6);
+                 const lines = cleanResponse.split("\n");
+               
+  
+                    lines.splice(0,1);
+                    console.log(lines[0])
+                    console.log(lines[1])
+                for (let i = 0; i < lines.length; i++) {
+                    const element = lines[i];
+  
+                    let nucleotides = lines[i].split(" ");
+                    //delete all empty nucleotide array items:
+                    nucleotides = nucleotides.filter(function (el) {
+                        return el != "";
+                    });
+                    //console.log(nucleotides);
+                    const firstIndexOfRow = nucleotides[0];
+                    //console.log(firstIndexOfRow);
+
+                   
+
+                    //output to output table, row by row, first item will be firstIndexOfRow, each element will be seperate column
+                    let row = `<tr id='nucleotide_row_${firstIndexOfRow}'>`; // Create a new row
+                    for(let j = 0; j < nucleotides.length; j++){
+                        row += `<td class="nucleotide-set-td">${nucleotides[j]}</td>`; // Add each element as a new column
+                    }
+                    row += "</tr>"; // Close the row
+                   
+                    $("#output_table").append(`<tbody id='addn_snp_row_${firstIndexOfRow}'  >${row} </tbody>`); // Add the row to the table
+                    
+                }
+
+             
+                
+                getSNPsByGeneName(geneInfo.geneName,geneInfo.geneId, geneInfo.absoluteGeneStart);
+                
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    function appendSNPToIndex(index, snp,metadata) {
+  
+    // Given that there are 60 nucleotides per row, each separated by a space after every 10
+    const rowIndex = Math.floor((index - 1) / 60); // when appending, we need to add 1 to mirror DOM
+    const relativeColumnIndex = index - (rowIndex * 60);
+    const relativeCellColumn = Math.floor((relativeColumnIndex - 1) / 10);
+
+   
+
+    //closest multiple of 60:
+    
+    const targetRow = Math.floor(index/60)*60+1;
+    let targetCellWithinTen = index%10;
+    if(targetCellWithinTen == 0){
+        targetCellWithinTen = 10;
+    }
+
+
+
+    // initialize variables to be used in loop.
+    var internalRowCountForSNPs = 0; // if SNP in same slot, needs to create a new row
+    var hasAppended = false;
+    var mulitpleSNPInRow = true; // automatically new line if there is already an SNP in the row
+
+    do {
+        var row = $(`#snp_row_${targetRow}_${internalRowCountForSNPs}`); // get first additional SNP row
+      
+        if(row.length == 0){ // if now additional SNP row, create one with some empty cells
+            createSNPRow(targetRow,internalRowCountForSNPs);
+            row = $(`#snp_row_${targetRow}_${internalRowCountForSNPs}`);
+        }
+        
+        
+
+        var targetSNPRowColumn = $(row).find('td')[relativeCellColumn+1]; // find all those empty cells
+    
+        if(targetSNPRowColumn == undefined){ // if there is no empty cell, create a new row
+            console.log('SNP Exceeded row count, ', index);
+            exceededRowCount++;
+            hasAppended = true;
+            continue;
+        }
+
+        if($(targetSNPRowColumn).html() == ''){ // if it's a brand new row, just find the correct slot, and and yyyyXyyy, X in the correct row
+            for(l=1; l<=10; l++){
+                if(l==targetCellWithinTen){
+                    $(targetSNPRowColumn).append(`<span class="snp bold text-red-500"  id="snp_${targetRow}_${l}_${internalRowCountForSNPs}">${snp}</span>`);
+
+             
+                tippy(`#snp_${targetRow}_${l}_${internalRowCountForSNPs}`, {
+                content: `${metadata.spdi}<br/> rs${metadata.uid}`,
+                placement: 'bottom',
+                allowHTML: true,
+                interactive: true,
+                });
+
+
+                    hasAppended = true;
+                }else{
+                    $(targetSNPRowColumn).append(`<span>.</span>`);
+                }
+            }
+        }
+        else{ // there is an SNP in this row, find out if it's in the target slot or not..
+            for(l=1; l<=10; l++){
+                if(l==targetCellWithinTen){
+                    console.log(targetSNPRowColumn) 
+                    let targetCellSpan = targetSNPRowColumn.querySelectorAll('span')[l-1];
+                    
+                    if($(targetCellSpan).html()=='.' && mulitpleSNPInRow==true){ // NOT in target slot, we are good to go, now there are multiple SNPs in the same row
+                        $(targetCellSpan).html(`${snp}`);
+                        hasAppended = true;
+                    }else{ // target slot! Skip to next row
+                        internalRowCountForSNPs++;
+                    }
+                }
+            }
+        }
+    } while (hasAppended==false);   
+  
+
+    
+    
+}
+
+function createSNPRow(targetRow,internalRowCountForSNPs){
+    
+    $(`#addn_snp_row_${targetRow}`).append(`<tr id='snp_row_${targetRow}_${internalRowCountForSNPs}' class="hidden-row snp-row" data-id="${targetRow}_${internalRowCountForSNPs}">
+                        <td ></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>    
+                        <td></td>  
+                    </tr>`); // Add the row to the table
+    
+        //refresh DOM to reflect changes
+}
+
+function getSNPsByGeneName(geneName,geneId,geneStart){
+    // https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=snp&term=ABCB1,Homo+sapiens+,3_prime_UTR_variant&retmax=100000
+
+    $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=snp&term=${geneId},${geneName},Homo+sapiens,3_prime_UTR_variant&retmax=500&rettype=json&retmode=json`,
+            type: "GET",
+            dataType: "json",
+            success: function(response){
+                console.log(response);
+                let idList = response.esearchresult.idlist.join(',');
+                // keep first 3
+              
+                
+                console.log(idList)
+                fetchSNPData(idList, geneStart)
+            }
+        
+        });
+
+    
+}
+
+function fetchSNPData(snpIdArray,geneStart){
+    //https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=snp&id=${snpIdArray}&rettype=json&retmode=json
+    $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=snp&rettype=json&retmode=json`,
+            type: "POST",
+            data: {
+                id: snpIdArray
+            },
+            dataType: "json",
+            success: function(response){
+                console.log(response);
+                // loop through result object key-value for in:
+                const snps = response.result;
+
+                for (const snpId in snps){
+                    snp = snps[snpId];
+                    console.log(snp.spdi)
+                    // break it up by :
+
+                    //split by , 
+                    if(snp.spdi == undefined){
+                        continue;
+                    }
+                    const snp_parent_array = snp.spdi.split(',');
+
+                    for(let i = 0; i < snp_parent_array.length; i++){
+                        const spdi = snp_parent_array[i].split(':');
+                    
+
+                        const chromosomeId = spdi[0];
+                        const position = spdi[1];
+                        const ref = spdi[2];
+                        const alt = spdi[3];
+                        //check if alt contains string NC_000007.14
+                      
+                        const relativePosition = position-geneStart+1;
+                        console.log(chromosomeId, position, ref, alt, relativePosition);
+
+                        if(ref.length>1 || alt.length>1){
+                            console.log('ref is more than 1');
+                            continue;
+                        }
+
+                        const metadata = {
+                            spdi: spdi,
+                            uid: snp.uid,
+                        }
+
+                        appendSNPToIndex(relativePosition, alt,metadata);
+                
+                    }
+                }
+                
+
+                
+            }
+        
+        });   
+}
+
+
+
+
+
+</script>
+</html>

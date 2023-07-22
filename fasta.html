@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FASTA Parser</title>
+</head>
+<body>
+    
+
+    <input type="file" id="fastaFile" accept=".fa" />
+
+    <script>
+    function getNucleotide(file, position) {
+        position = position-87481989+2;
+        console.log("searching for position", position)
+        const reader = new FileReader();
+    
+        reader.onload = function(e) {
+            const lines = e.target.result.split("\n");
+            const sequenceLineLength = lines[1].length; // assuming line 2 (0-indexed) is a sequence line
+    
+            // Ignore the header, start reading from line 1 (0-indexed)
+            const lineIndex = Math.floor((position - 1) / sequenceLineLength) + 1;
+            console.log("line index", lineIndex)
+            const charPosition = (position - 1) % sequenceLineLength;
+    
+            // Extract the nucleotide
+            const nucleotide = lines[lineIndex].charAt(charPosition);
+    
+            console.log("Nucleotide at position", position, ":", nucleotide, "absolute position: ", position+87481989);
+            //get surrounding nucleotides
+            const surrounding = lines[lineIndex].substring(charPosition-3, charPosition+3);
+            console.log("Surrounding nucleotides: ", surrounding);
+        };
+    
+        reader.onerror = function(error) {
+            console.error("Error:", error);
+        };
+    
+        reader.readAsText(file);
+    }
+    
+    document.getElementById('fastaFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            getNucleotide(file, 87504055);
+        }
+    });
+    </script>
+    
+
+
+</body>
+</html>
