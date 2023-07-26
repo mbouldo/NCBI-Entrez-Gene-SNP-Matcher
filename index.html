@@ -6,18 +6,18 @@
     <title>SNP Match</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body{
+        
+        #output_table{
             font-family:'Courier New';
-           
         }
         .nucleotide-set-td{
             padding-right:10px;
          
           
         }
-        .hidden-row{
+        .snp-row{
             height:10px;
-            background:#ccc;
+            background:#f4f4f4;
 
         }
         .bold{
@@ -32,18 +32,38 @@
            
             max-width:12px;
         }
+
+        .text-blue-500{
+            color:#4299e1;
+        }
     </style>
 </head>
 <body>
    
+    <div class="flex items-center flex-col pt-12">
+        <div>
+            <div class="mt-3 w-64">
+                <h3>
+                    <div class="font-semibold  ">Search for a gene...</div> <span id="added-files-list"></span>
+                </h3>
+            </div>
+         
+
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="text-gray-500 fill-gray-500" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M416 0c17.7 0 32 14.3 32 32c0 59.8-30.3 107.5-69.4 146.6c-28 28-62.5 53.5-97.3 77.4l-2.5 1.7c-11.9 8.1-23.8 16.1-35.5 23.9l0 0 0 0 0 0-1.6 1c-6 4-11.9 7.9-17.8 11.9c-20.9 14-40.8 27.7-59.3 41.5H283.3c-9.8-7.4-20.1-14.7-30.7-22.1l7-4.7 3-2c15.1-10.1 30.9-20.6 46.7-31.6c25 18.1 48.9 37.3 69.4 57.7C417.7 372.5 448 420.2 448 480c0 17.7-14.3 32-32 32s-32-14.3-32-32H64c0 17.7-14.3 32-32 32s-32-14.3-32-32c0-59.8 30.3-107.5 69.4-146.6c28-28 62.5-53.5 97.3-77.4c-34.8-23.9-69.3-49.3-97.3-77.4C30.3 139.5 0 91.8 0 32C0 14.3 14.3 0 32 0S64 14.3 64 32H384c0-17.7 14.3-32 32-32zM338.6 384H109.4c-10.1 10.6-18.6 21.3-25.5 32H364.1c-6.8-10.7-15.3-21.4-25.5-32zM109.4 128H338.6c10.1-10.7 18.6-21.3 25.5-32H83.9c6.8 10.7 15.3 21.3 25.5 32zm55.4 48c18.4 13.8 38.4 27.5 59.3 41.5c20.9-14 40.8-27.7 59.3-41.5H164.7z"/></svg> </div>
+                <input type="search"  value="ABCB1" id="geneName" class="mb-12 block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 " placeholder="Example: A,B,C" required="">
+               
+            </div>
+        </div>
+     
     
-    <label>Fetch the following gene:</label>
-    <br/>
-    <input type="text" value="ABCB1" id="geneName"/>
-    <br/>
+    
+        <div id="output_table">
 
-
-    <div id="output_table"></div>
+        </div>
+    </div>
+ 
 </body>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
@@ -163,12 +183,35 @@
         });
     }
 
-    function appendSNPToIndex(index, snp,metadata) {
-  
-    // Given that there are 60 nucleotides per row, each separated by a space after every 10
+    function appendSNPToIndex(index, snp, metadata) {
+    
+   
+    let color = 'blue';
+        
+    if(index>300 ){
+        return false;
+    }
+
+    if(index==5){
+        console.log(metadata)
+    }
+
     const rowIndex = Math.floor((index - 1) / 60); // when appending, we need to add 1 to mirror DOM
     const relativeColumnIndex = index - (rowIndex * 60);
+
+    
     const relativeCellColumn = Math.floor((relativeColumnIndex - 1) / 10);
+
+
+
+    if(metadata.spdi[1]==87503030){
+        console.log('index ', index, relativeCellColumn)
+    }
+    if(metadata.spdi[1]==87503016){
+        console.log('index ', index, relativeCellColumn)
+    }
+   
+    // Given that there are 60 nucleotides per row, each separated by a space after every 10
 
    
 
@@ -206,18 +249,53 @@
             continue;
         }
 
-        if($(targetSNPRowColumn).html() == ''){ // if it's a brand new row, just find the correct slot, and and yyyyXyyy, X in the correct row
-            for(l=1; l<=10; l++){
-                if(l==targetCellWithinTen){
-                    $(targetSNPRowColumn).append(`<span class="snp bold text-red-500"  id="snp_${targetRow}_${l}_${internalRowCountForSNPs}">${snp}</span>`);
+        if(snp==''){
+            //this means deletion:
+            snp = '-';
+        }else{
+            color = 'red'; // substitution
+        }
 
-             
-                tippy(`#snp_${targetRow}_${l}_${internalRowCountForSNPs}`, {
-                content: `${metadata.spdi}<br/> rs${metadata.uid}`,
+        if(snp.length>1){
+            // multi sub
+            
+            // get first char of snp
+            if(snp.length==metadata.spdi[2].length){
+                console.log(snp.length, metadata.spdi[2].length)
+                snp = '=';
+            }
+            else if(snp.length<metadata.spdi[2].length){
+                snp = '-'
+            }
+            else{
+                snp = '+';
+            }
+            
+
+        }
+
+        let tippyObj = {
+                content: `${metadata.spdi[0]}, ${metadata.spdi[1]} (${index})<br/> 
+                ${metadata.spdi[2]}
+                <br/>
+                ${metadata.spdi[3]}
+                <br/>
+                rs${metadata.uid} <a href="https://www.ncbi.nlm.nih.gov/snp/rs${metadata.uid}" class="underline" target="_blank">View on NCBI</a>`,
                 placement: 'bottom',
                 allowHTML: true,
                 interactive: true,
-                });
+                };
+
+        if($(targetSNPRowColumn).html() == ''){ // if it's a brand new row, just find the correct slot, and and yyyyXyyy, X in the correct row
+            for(l=1; l<=10; l++){
+                if(l==targetCellWithinTen){
+                    if(snp=='-' || snp=='+'){
+                        color = 'blue';
+                    }
+                    $(targetSNPRowColumn).append(`<span class="snp bold text-${color}-500"  id="snp_${index}_${internalRowCountForSNPs}">${snp}</span>`);
+
+             
+                tippy(`#snp_${index}_${internalRowCountForSNPs}`, tippyObj);
 
 
                     hasAppended = true;
@@ -229,11 +307,17 @@
         else{ // there is an SNP in this row, find out if it's in the target slot or not..
             for(l=1; l<=10; l++){
                 if(l==targetCellWithinTen){
-                    console.log(targetSNPRowColumn) 
                     let targetCellSpan = targetSNPRowColumn.querySelectorAll('span')[l-1];
                     
                     if($(targetCellSpan).html()=='.' && mulitpleSNPInRow==true){ // NOT in target slot, we are good to go, now there are multiple SNPs in the same row
-                        $(targetCellSpan).html(`${snp}`);
+                        if(snp=='-' || snp=='+'){
+                            color = 'blue';
+                        }
+                        $(targetCellSpan)[0].outerHTML = `<span class="snp bold text-${color}-500"  id="snp_${index}_${internalRowCountForSNPs}">${snp}</span>`;
+
+                        tippy(`#snp_${index}_${internalRowCountForSNPs}`, tippyObj);
+
+
                         hasAppended = true;
                     }else{ // target slot! Skip to next row
                         internalRowCountForSNPs++;
@@ -250,7 +334,7 @@
 
 function createSNPRow(targetRow,internalRowCountForSNPs){
     
-    $(`#addn_snp_row_${targetRow}`).append(`<tr id='snp_row_${targetRow}_${internalRowCountForSNPs}' class="hidden-row snp-row" data-id="${targetRow}_${internalRowCountForSNPs}">
+    $(`#addn_snp_row_${targetRow}`).append(`<tr id='snp_row_${targetRow}_${internalRowCountForSNPs}' class=" snp-row" data-id="${targetRow}_${internalRowCountForSNPs}">
                         <td ></td>
                         <td></td>
                         <td></td>
@@ -264,7 +348,7 @@ function createSNPRow(targetRow,internalRowCountForSNPs){
 }
 
 function getSNPsByGeneName(geneName,geneId,geneStart){
-    // https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=snp&term=ABCB1,Homo+sapiens+,3_prime_UTR_variant&retmax=100000
+  
 
     $.ajax({
             url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=snp&term=${geneId},${geneName},Homo+sapiens,3_prime_UTR_variant&retmax=500&rettype=json&retmode=json`,
@@ -286,7 +370,7 @@ function getSNPsByGeneName(geneName,geneId,geneStart){
 }
 
 function fetchSNPData(snpIdArray,geneStart){
-    //https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=snp&id=${snpIdArray}&rettype=json&retmode=json
+   
     $.ajax({
             url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=snp&rettype=json&retmode=json`,
             type: "POST",
@@ -301,7 +385,7 @@ function fetchSNPData(snpIdArray,geneStart){
 
                 for (const snpId in snps){
                     snp = snps[snpId];
-                    console.log(snp.spdi)
+                  
                     // break it up by :
 
                     //split by , 
@@ -321,19 +405,19 @@ function fetchSNPData(snpIdArray,geneStart){
                         //check if alt contains string NC_000007.14
                       
                         const relativePosition = position-geneStart+1;
-                        console.log(chromosomeId, position, ref, alt, relativePosition);
+       
 
-                        if(ref.length>1 || alt.length>1){
-                            console.log('ref is more than 1');
-                            continue;
-                        }
+                        // if(ref.length>1 || alt.length>1){
+                        //     console.log('ref is more than 1');
+                        //     continue;
+                        // }
 
                         const metadata = {
                             spdi: spdi,
                             uid: snp.uid,
                         }
 
-                        appendSNPToIndex(relativePosition, alt,metadata);
+                        appendSNPToIndex(relativePosition, alt, metadata);
                 
                     }
                 }
