@@ -139,6 +139,9 @@
             type: "GET",
             dataType: "text",
             success: function(response){
+                console.log(response);
+                const transcript_ids = extractTranscriptIds(response);
+                console.log(transcript_ids);
                 const originIndex = response.indexOf("ORIGIN");
                 const cleanResponse = response.substring(originIndex+6);
                  const lines = cleanResponse.split("\n");
@@ -174,6 +177,7 @@
 
              
                 
+                getmRNATranscriptsByGeneId(geneInfo.geneId);
                 getSNPsByGeneName(geneInfo.geneName,geneInfo.geneId, geneInfo.absoluteGeneStart);
                 
             },
@@ -182,6 +186,48 @@
             }
         });
     }
+
+    function getmRNATranscriptsByGeneId(geneId){
+        $.ajax({
+            url: `https://api.ncbi.nlm.nih.gov/datasets/v2alpha/gene`,
+            type: "POST",
+            data:JSON.stringify({
+                    "geneIds": [
+                        geneId
+                    ],
+                    "returned_content": "PRODUCT"
+                }), 
+                contentType: "application/json; charset=utf-8",
+            dataType: "JSON",
+            success: function(response){
+                console.log("OUT")
+                console.log(response);
+                const transcripts = response.reports[0].product.transcripts;
+                console.log(transcripts);
+          
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    function extractTranscriptIds(genbankText) {
+    // Create a regex pattern to find mRNA entries and transcript_ids
+        const regex = /mRNA[\s\S]*?\/transcript_id="([^"]*)"/g;
+        let match;
+        let transcriptIds = [];
+
+        // Find matches and push transcript ids to the array
+        while ((match = regex.exec(genbankText)) !== null) {
+            transcriptIds.push(match[1]);
+        }
+
+        // Return the array of transcript ids
+        return transcriptIds;
+    }
+
+
 
     function appendSNPToIndex(index, snp, metadata) {
     
@@ -385,7 +431,20 @@ function fetchSNPData(snpIdArray,geneStart){
 
                 for (const snpId in snps){
                     snp = snps[snpId];
-                  
+                    const docsum = snp.docsum.split(',');
+                    //console.log(docsum)
+                    for(varsnp of docsum){
+                        // if contains HGVS continue;
+                        if(varsnp.includes('HGVS')){
+                            continue;
+                        }
+                        // break it up by :
+                        splitVarSnp = varsnp.split(':');
+                        if(splitVarSnp[0]=='NM_001348946.2'){
+                            console.log(splitVarSnp)
+                        }
+
+                    }
                     // break it up by :
 
                     //split by , 
@@ -417,6 +476,7 @@ function fetchSNPData(snpIdArray,geneStart){
                             uid: snp.uid,
                         }
 
+                        
                         appendSNPToIndex(relativePosition, alt, metadata);
                 
                     }

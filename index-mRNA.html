@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNP Match</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        
+        #output_table{
+            font-family:'Courier New';
+        }
+        .nucleotide-set-td{
+            padding-right:10px;
+         
+          
+        }
+        .snp-row{
+            height:10px;
+            background:#f4f4f4;
+
+        }
+        .del-row{
+            height:10px;
+          
+           
+        }
+        .dup-row{
+            height:10px;
+         
+        }
+        .bold{
+            font-weight:bold;
+        }
+        .text-red-500{
+            color:#f56565;
+        }
+        td * { margin: 0px; }
+        table { table-layout: fixed; }
+        .snp-row td{
+           
+            max-width:12px;
+        }
+
+        .text-blue-500{
+            color:#4299e1;
+        }
+
+        .snp{
+            width:1ch;
+            height: 1ch;
+            display:inline-flex;
+        }
+        .spacer{
+            display:invisible;
+            color:#f4f4f4;
+        }
+
+       
+    </style>
+</head>
+<body>
+    <div class="max-w-5xl mx-auto py-12">
+        <h2 class="text-4xl font-extrabold ">SNP mRNA Match Tool</h2>
+        <p class="my-4 text-lg text-gray-500">A simple tool to remove selected columns from a series of .xlsx files.
+            Made by Martin Bouldo.</p>
+   
+    <div class="flex  flex-col ">
+        <div>
+            <div class="flex space-x-6">
+                <div>
+                    <div class="mt-3 w-64">
+                        <h3>
+                            <div class="font-semibold  mb-1">Search for a gene...</div> 
+                        </h3>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="text-gray-500 fill-gray-500" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M416 0c17.7 0 32 14.3 32 32c0 59.8-30.3 107.5-69.4 146.6c-28 28-62.5 53.5-97.3 77.4l-2.5 1.7c-11.9 8.1-23.8 16.1-35.5 23.9l0 0 0 0 0 0-1.6 1c-6 4-11.9 7.9-17.8 11.9c-20.9 14-40.8 27.7-59.3 41.5H283.3c-9.8-7.4-20.1-14.7-30.7-22.1l7-4.7 3-2c15.1-10.1 30.9-20.6 46.7-31.6c25 18.1 48.9 37.3 69.4 57.7C417.7 372.5 448 420.2 448 480c0 17.7-14.3 32-32 32s-32-14.3-32-32H64c0 17.7-14.3 32-32 32s-32-14.3-32-32c0-59.8 30.3-107.5 69.4-146.6c28-28 62.5-53.5 97.3-77.4c-34.8-23.9-69.3-49.3-97.3-77.4C30.3 139.5 0 91.8 0 32C0 14.3 14.3 0 32 0S64 14.3 64 32H384c0-17.7 14.3-32 32-32zM338.6 384H109.4c-10.1 10.6-18.6 21.3-25.5 32H364.1c-6.8-10.7-15.3-21.4-25.5-32zM109.4 128H338.6c10.1-10.7 18.6-21.3 25.5-32H83.9c6.8 10.7 15.3 21.3 25.5 32zm55.4 48c18.4 13.8 38.4 27.5 59.3 41.5c20.9-14 40.8-27.7 59.3-41.5H164.7z"/></svg> </div>
+                        <input type="search"  value="ABCB1" id="geneName" class=" block w-full p-2.5 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 " placeholder="Example: A,B,C" required="">
+                    
+                    </div>
+                </div>
+                <div class="flex items-end">
+                    <div class=" mb-1">
+                        <button class="px-4 py-2 text-sm font-medium tracking-wide text-white capitalize bg-blue-500 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2">
+                            Search</button>
+                    </div>
+                </div>
+                <div>
+                  
+
+                </div>
+
+                
+            </div>
+            <div class="flex">
+                <div >
+                    <div class="mt-3 w-128">
+                        <h3>
+                            <div class="font-semibold  mb-1">Output the following mRNA Transcript Version...</div> <span id=""></span>
+                        </h3>
+                    </div>
+                    <select id="transcriptNames" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-96 p-2.5 pt-3 ">
+                    </select>
+                </div>
+                <div>
+                    <div class="flex items-center mt-12 ml-12">
+                        <input  id="isReversed" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="isReversed" class="ml-2 text-sm font-medium text-gray-900 " id="">Reversed</label>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="mt-3 ">
+                    <h3>
+                        <div class="font-semibold  mb-1">Transcript Metadata:</div> 
+                        <div class="mb-3">
+                            <div class="block">CDS (Starting Point): <span id="cds_output"></span></div>
+                        </div>
+                        <hr/>
+                        <div  class="text-mono ]">
+                            <pre id="original_response" style="height:300px;" class="overflow-y-scroll"></pre>
+
+                            <div class="flex justify-end items-center bg-white mt-[-20px] bg-opacity-75"><div id="expandResponse" class="text-brand transition flex items-center text-blue-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" class="h-5 w-5 mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> Expand</div></div>
+
+                            <div class="flex justify-end items-center bg-white mt-[-20px] bg-opacity-75"><div id="collapseResponse" class="hidden text-brand transition flex items-center text-blue-500 cursor-pointer"><svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                              </svg>
+                               Collapse</div></div>
+                        </div>
+                    </h3>
+                </div>
+            </div>
+           
+        </div>
+     
+     
+        <div>
+            <h2 class="text-2xl font-extrabold mt-12">SNP Viewer</h2>
+        </div>
+        <div id="output_table" class="mt-5">
+
+        </div>
+    </div>
+</div>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script>
+
+    var orderMode = 'normal';
+
+
+    var totalLength = 0;
+    function getGeneByName(geneName){
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=human[orgn],ABCB1[title]&rettype=json&retmode=json`,
+            type: "GET",
+            dataType: "JSON",
+            success: function(response){
+                console.log(response);
+                const geneId = response.esearchresult.idlist[0];
+                console.log('Associated id... ', geneId);
+                getGeneSummaryById(geneId,geneName);
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    getGeneByName($("#geneName").val());
+
+
+    function getGeneSummaryById(geneId,geneName){
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&id=${geneId}&rettype=json&retmode=json`,
+            type: "GET",
+            dataType: "JSON",
+            success: function(response){
+              
+                const geneObj = response.result[geneId];
+                console.log(geneObj);
+
+                const summary = geneObj.summary;
+                const description = geneObj.description;
+
+                const chrStartPosition = geneObj.chrstart;
+
+                const genomicInfo = geneObj.genomicinfo[0];
+                const geneStart = genomicInfo.chrstop;
+                const geneEnd = genomicInfo.chrstart;
+
+                console.log(chrStartPosition, geneStart, geneEnd, geneEnd-geneStart, chrStartPosition-geneStart);
+
+                const relativeStart = chrStartPosition-geneStart;
+                const relativeEnd = geneEnd-chrStartPosition;
+                
+                //const relativeStartPosition = genomicInfo.chrstart;
+                getFASTANucleotideSeqByNamePos(
+                    {
+                        nuccoreId: genomicInfo.chraccver,
+                        geneId: geneId,
+                        geneName: geneName,
+                        absoluteGeneStart: geneStart
+                    },geneStart+1,geneEnd+1);
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    var exceededRowCount = 0;
+    function getFASTANucleotideSeqByNamePos(geneInfo,startPosition,endPosition){
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${geneInfo.nuccoreId}&rettype=genbank&retmode=text&from=${startPosition}&to=${endPosition}`,
+            type: "GET",
+            dataType: "text",
+            success: function(response){
+                const transcript_ids = extractTranscriptIds(response);
+                const originIndex = response.indexOf("ORIGIN");
+                const cleanResponse = response.substring(originIndex+6);
+                const lines = cleanResponse.split("\n");
+
+               
+             
+                
+                getSNPsByGeneName(geneInfo.geneName,geneInfo.geneId, geneInfo.absoluteGeneStart);
+                getmRNATranscriptsByGeneId(geneInfo.geneId);
+                fetchSelectedTranscript();
+                
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    var gene_transcript_names = [];
+    function getmRNATranscriptsByGeneId(geneId){
+        $.ajax({
+            url: `https://api.ncbi.nlm.nih.gov/datasets/v2alpha/gene`,
+            type: "POST",
+            async: false,
+            data:JSON.stringify({
+                    "geneIds": [
+                        geneId
+                    ],
+                    "returned_content": "PRODUCT"
+                }), 
+                contentType: "application/json; charset=utf-8",
+            dataType: "JSON",
+            success: function(response){
+
+                const transcripts = response.reports[0].product.transcripts;
+                gene_transcript_names = []
+                for(transcript of transcripts){
+                    gene_transcript_names.push(transcript.accession_version)
+                    $("#transcriptNames").append(`<option>${transcript.accession_version}</option>`)
+                }
+         
+          
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+    var offset;
+    function fetchSelectedTranscript(){
+        $("#output_table").empty();
+        addedItems = [];
+        $("#output_table").html('');
+        const transcript_name = $("#transcriptNames").val();
+        $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${transcript_name}&rettype=genbank&retmode=text`,
+            type: "GET",
+            dataType: "text",
+            success: function(response){
+                $("#original_response").text(response);
+                const transcript_ids = extractTranscriptIds(response);
+                
+                const originIndex = response.indexOf("ORIGIN");
+                const cleanResponse = response.substring(originIndex+6);
+                var lines = cleanResponse.split("\n");
+
+                const cdsIndex = response.indexOf("CDS");
+                const cleanCDS = response.substring(cdsIndex+6);
+                $("#cds_output").text(cleanCDS.split("\n")[0]);
+                 offset = cleanCDS.split("\n")[0].split('..')[1];
+
+               
+               
+                lines.splice(0,1);
+
+                if(orderMode == 'reversed'){
+                    console.log(lines)
+                    lines = reverseSequence(lines);
+                    console.log(lines)
+                }
+
+   
+                for (let i = 0; i < lines.length; i++) {
+                    const element = lines[i];
+  
+                    let nucleotides = lines[i].split(" ");
+                    //delete all empty nucleotide array items:
+                    nucleotides = nucleotides.filter(function (el) {
+                        return el != "";
+                    });
+                    const firstIndexOfRow = nucleotides[0];
+
+                    //output to output table, row by row, first item will be firstIndexOfRow, each element will be seperate column
+                    let row = `<tr id='nucleotide_row_${firstIndexOfRow}'>`; // Create a new row
+                    for(let j = 0; j < nucleotides.length; j++){
+                        row += `<td class="nucleotide-set-td">${nucleotides[j]}</td>`; // Add each element as a new column
+                    }
+                    row += "</tr>"; // Close the row
+                   
+                    $("#output_table").append(`<tbody id='addn_snp_row_${firstIndexOfRow}'  >${row} </tbody>
+                    <tbody id='addn_del_row_${firstIndexOfRow}'  ></tbody>
+                    <tbody id='addn_dup_row_${firstIndexOfRow}'  ></tbody>`); // Add the row to the table
+                }
+
+                markupStoredSNPData();
+
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
+
+    function reverseSequence(obj) {
+    let sequence = '';
+
+    // Extract sequences and concatenate
+    for (let key in obj) {
+        sequence += obj[key].replace(/[^atcg]/ig, '');
+    }
+
+    // Reverse the sequence
+    let reversedSequence = sequence.split('').reverse().join('');
+    console.log(reversedSequence)
+    totalLength = reversedSequence.length;
+
+    // Split the reversed sequence into chunks of 60 for the output
+    let chunks = [];
+    for (let i = 0; i < reversedSequence.length; i += 60) {
+        let chunk = reversedSequence.substr(i, 60);
+        
+        // Add spaces every 10 characters
+        let spacedChunk = '';
+        for (let j = 0; j < chunk.length; j += 10) {
+            spacedChunk += chunk.substr(j, 10) + ' ';
+        }
+        chunks.push(spacedChunk.trim());
+    }
+
+    // Convert chunks into the desired format
+    let result = {};
+    for (let i = 0; i < chunks.length; i++) {
+        let startNumber = (i * 60) + 1;
+        result[i] = `${("        " + startNumber).slice(-8)} ${chunks[i]}`;
+    }
+
+//    return result;
+//return result as standard array
+
+    return Object.values(result);
+
+}
+
+    $("#transcriptNames").change(function(){
+        if($("#transcriptNames").val() == ""){
+            return;
+        }
+        
+        
+        fetchSelectedTranscript();
+    })
+
+    //check if #isReversed is checked
+  
+    $(document).ready(function() {
+        $('#isReversed').change(function() {
+            if(this.checked) {
+                orderMode = 'reversed';
+            }else{
+                orderMode = 'normal';
+            }
+            fetchSelectedTranscript();    
+        });
+    });
+
+
+    function extractTranscriptIds(genbankText) {
+    // Create a regex pattern to find mRNA entries and transcript_ids
+        const regex = /mRNA[\s\S]*?\/transcript_id="([^"]*)"/g;
+        let match;
+        let transcriptIds = [];
+
+        // Find matches and push transcript ids to the array
+        while ((match = regex.exec(genbankText)) !== null) {
+            transcriptIds.push(match[1]);
+        }
+
+        // Return the array of transcript ids
+        return transcriptIds;
+    }
+
+
+    $("#expandResponse").click(function(){
+        $("#original_response").css('height', 'auto');
+        $("#expandResponse").hide();
+        $("#collapseResponse").show();
+    })
+    $("#collapseResponse").click(function(){
+        $("#original_response").css('height', '300px');
+        $("#expandResponse").show();
+        $("#collapseResponse").hide();
+    })
+    
+
+
+    function appendSNPToIndex(index, snp, snpObject) {
+
+    const delta = snpObject.end-snpObject.start;
+
+    let outerWidth = snpObject.end-snpObject.start;
+    if(outerWidth==0){
+        outerWidth = 1;
+    }else{
+        outerWidth+=1;
+    }
+
+        if(orderMode=='reversed'){
+          
+            index = 5387 - index + 1;
+            if(outerWidth>1){
+                console.log(index, outerWidth)
+                index = index - outerWidth+1;
+                console.log(index, outerWidth)
+            }
+        }
+        else{
+            if(outerWidth>1){
+                // index = index-1;
+            }
+        }
+    let color = 'blue';
+
+    const rowIndex = Math.floor((index - 1) / 60); // when appending, we need to add 1 to mirror DOM
+    const relativeColumnIndex = index - (rowIndex * 60);
+    const relativeCellColumn = Math.floor((relativeColumnIndex - 1) / 10);
+    const targetRow = Math.floor(index/60)*60+1;
+    let targetCellWithinTen = index%10;
+
+    if(targetCellWithinTen == 0){
+        targetCellWithinTen = 10;
+    }
+
+   // console.log(index, rowIndex, relativeCellColumn, targetRow, targetCellWithinTen, snp, snpObject)
+
+    var snpType = snpObject.snpType ;
+    if(snpType==null){
+        snpType = 'del';
+        snpObject.snpType = 'del';
+        snpObject.isDel = true;
+      
+    }
+
+   
+
+    // initialize variables to be used in loop.
+    var internalRowCountForSNPs = 0; // if SNP in same slot, needs to create a new row
+    var hasAppended = false;
+    var mulitpleSNPInRow = false; // automatically new line if there is already an SNP in the row
+
+    do {
+        var row = $(`#${snpObject.snpType}_row_${targetRow}_${internalRowCountForSNPs}`); // get first additional SNP row
+      
+        if(row.length == 0){ // if now additional SNP row, create one with some empty cells
+            createAddnRow(targetRow,internalRowCountForSNPs,snpObject.snpType);
+            row = $(`#${snpObject.snpType}_row_${targetRow}_${internalRowCountForSNPs}`);
+        }
+        
+        
+        var targetSNPRowColumn = $(row).find('td')[relativeCellColumn+1]; // find all those empty cells
+    
+        if(targetSNPRowColumn == undefined){ // if there is no empty cell, create a new row
+            exceededRowCount++;
+            hasAppended = true;
+            continue;
+        }
+
+
+      
+        
+
+        
+        if(outerWidth+targetCellWithinTen>11){
+            outerWidth+=1;
+            if(outerWidth+targetCellWithinTen>21){
+                outerWidth+=1;
+            }
+        }
+
+        if(orderMode=='reversed' && outerWidth>=1){
+            index =  index-outerWidth;
+        }
+
+        const typeTextMap = {
+            snp: 'Substitution',
+            del: 'Deletion',
+            dup: 'Duplication',
+            ins: 'Insertion',
+        }
+
+        let tippyObj = {
+                content: `(${index}) - ${delta+1}, ${typeTextMap[snpType]}<br/> 
+                ${snpObject.string}<br/>
+                rs${snpObject.uid} <a href="https://www.ncbi.nlm.nih.gov/snp/rs${snpObject.uid}" class="underline" target="_blank">View on NCBI</a>`,
+                placement: 'bottom',
+                allowHTML: true,
+                interactive: true,
+        };
+
+        const typeColor = {
+            snp: 'red',
+            del: 'blue',
+            dup: 'blue',
+            ins: 'blue',
+        }
+       
+
+        let additionalClass = '';
+        if(snpType=='del' || snpType=='dup' || snpType=='ins'){
+            additionalClass = `absolute`;
+        }
+
+
+        // bg-blue-500, bg-red-500, bg-green-500
+
+        if($(targetSNPRowColumn).html() == ''){ // if it's a brand new row, just find the correct slot, and and yyyyXyyy, X in the correct row
+            for(l=1; l<=10; l++){
+                if(l==targetCellWithinTen){
+                    if(snp=='-' || snp=='+'){
+                        color = 'blue';
+                    }
+                    $(targetSNPRowColumn).append(`<span class="snp bold text-${color}-500 rail-box-${snpType} items-center justify-center ${additionalClass}"  id="${snpType}_${index}_${internalRowCountForSNPs}" data-id="${snpObject.uid}" style="width:${outerWidth}ch;">
+                        <span class="bg-${typeColor[snpType]}-500 h-1 w-full"></span>
+                        </span>`);
+
+             
+                
+               tippy(`#${snpType}_${index}_${internalRowCountForSNPs}`, tippyObj);
+
+                    hasAppended = true;
+                }else{
+                    $(targetSNPRowColumn).append(`<span class='select-none spacer'>.</span>`);
+                }
+            }
+        }
+        else{ // there is an SNP in this row, find out if it's in the target slot or not..
+            for(l=1; l<=10; l++){
+                if(l==targetCellWithinTen){
+                    let targetCellSpan = targetSNPRowColumn.querySelectorAll('span')[l-1];
+                    
+                    if($(targetCellSpan).html()=='.' && mulitpleSNPInRow==true){ // NOT in target slot, we are good to go, now there are multiple SNPs in the same row
+                        if(snp=='-' || snp=='+'){
+                            color = 'blue';
+                        }
+                        $(targetCellSpan)[0].outerHTML = `<span class="snp bold text-${color}-500 rail-box-${snpType} ${additionalClass}"  items-center justify-center"  id="${snpType}_${index}_${internalRowCountForSNPs}" data-id="${snpObject.uid}" style="width:${outerWidth}ch;">
+                        <span class="bg-${typeColor[snpType]}-500 h-1 w-full"></span>
+                        </span>`;
+
+                        tippy(`#${snpType}_${index}_${internalRowCountForSNPs}`, tippyObj);
+
+
+                        hasAppended = true;
+                    }else{ // target slot! Skip to next row
+                        if(snpObject.snpType=='snp'){
+                            hasAppended = true;
+                            continue;
+                        }
+                        internalRowCountForSNPs++;
+                    }
+                }
+            }
+        }
+    } while (hasAppended==false);   
+  
+
+    
+    
+}
+
+function createAddnRow(targetRow, subindex, type){
+    
+    $(`#addn_${type}_row_${targetRow}`).append(`<tr id='${type}_row_${targetRow}_${subindex}' class=" snp-row ${type}-row" data-id="${targetRow}_${subindex}">
+                        <td ></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>    
+                        <td></td>  
+                    </tr>`); // Add the row to the table
+    
+}
+
+
+
+function getSNPsByGeneName(geneName,geneId,geneStart){
+  
+
+    $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=snp&term=${geneId},${geneName},Homo+sapiens,3_prime_UTR_variant&retmax=500&rettype=json&retmode=json`,
+            type: "GET",
+            dataType: "json",
+            async: false,
+            success: function(response){
+                let idList = response.esearchresult.idlist.join(',');
+                fetchSNPData(idList, geneStart)
+            }
+        
+        });
+
+    
+}
+
+var addedItems = [];
+
+var snpData;
+
+function fetchSNPData(snpIdArray){
+   
+    $.ajax({
+            url: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=snp&rettype=json&retmode=json`,
+            type: "POST",
+            async: false,
+            data: {
+                id: snpIdArray
+            },
+            dataType: "json",
+            success: function(response){
+                snpData = response.result; // called in markupStoredSNPData when needed (transcript fetch complete...)
+            }
+        });   
+}
+var count = 0
+function markupStoredSNPData(){
+    const snps = snpData;
+
+    for (const snpId in snps){
+        snp = snps[snpId];
+    
+        if(snp.docsum == undefined){
+            continue;
+        }
+        const docsum = snp.docsum.split(',');
+        //console.log(docsum)
+        for(varsnp of docsum){
+            count++;
+            // if contains HGVS continue;
+            if(varsnp.includes('HGVS')){
+                continue;
+            }
+            // break it up by :
+            splitVarSnp = varsnp.split(':');
+            if(splitVarSnp[0]==gene_transcript_names[3]){
+                const snpObject = handleSNPTextData(splitVarSnp[1]);
+            
+                const spdi = snp.spdi.split(',')[0].split[':'];
+                if(snp.spdi == undefined){
+                    continue;
+                }   
+
+                snpObject.spdi = snp.spdi;
+                snpObject.uid = snp.uid;
+                
+                if(snpObject.original==null){
+                    snpObject.original = 'x';
+                }
+
+                if(snpObject.isDel || snpObject.isDup || snpObject.isIns){
+                    if(addedItems.includes(`${snpObject.start}_${snpObject.end}_${snpObject.snpType}`)){
+                        continue;
+                    }else{
+                        addedItems.push(`${snpObject.start}_${snpObject.end}_${snpObject.snpType}`);
+                    }
+                }
+                
+                appendSNPToIndex(parseInt(snpObject.start)+parseInt(offset), snpObject.original, snpObject);
+            }
+
+        }
+    }
+}
+
+function handleSNPTextData(snpString) {
+    // Initialize object with default values
+    let snpStringObject = {
+        start: null,
+        end: null,
+        isSub: false,
+        isDel: false,
+        isDup: false,
+        isIns: false,
+        original: null,
+        snpType: null,
+        string: snpString,
+    };
+
+    // Extract start and end position using regular expressions
+    const position = snpString.match(/\d+(_\d+)?/)[0].split('_');
+
+    let original = snpString.split('>')[0].split('*')[1].match(/[A-Z]+/);
+    if(original){
+        snpStringObject.original = original[0];
+    }
+
+    if(original=='SEQ'){
+        original==null;
+    }
+    
+
+
+
+    const parts = snpString.split("*");
+
+// Get the start and end positions of the snpString.
+    const start = parts[1].match(/\d+(_\d+)?/)[0]
+    end = start;
+    if(parts[2]){
+        end = parts[2].match(/\d+(_\d+)?/)[0]
+    }
+
+    snpStringObject.start = start
+    snpStringObject.end = end
+
+
+    // Check snpString type
+    if (snpString.includes('>')) {
+        snpStringObject.isSub = true;
+        snpStringObject.snpType = 'snp';
+    } else if (snpString.includes('del')) {
+        snpStringObject.isDel = true;
+        snpStringObject.snpType = 'del';
+    } else if (snpString.includes('dup')) {
+        snpStringObject.isDup = true;
+        snpStringObject.snpType = 'dup';
+    } else if (snpString.includes('ins')) {
+        snpStringObject.isIns = true;
+        snpStringObject.snpType = 'ins';
+    }
+
+    if(snpStringObject.snpType=='ins'){
+        console.log('ins');
+    }
+    
+
+    return snpStringObject;
+}
+
+
+
+
+
+</script>
+</html>
