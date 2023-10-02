@@ -63,6 +63,58 @@
            
   
         }
+        .bg-gray{
+            background: rgb(211,211,211);
+        }
+
+        /* The snackbar - position it at the bottom and in the middle of the screen */
+#snackbar {
+  visibility: hidden; /* Hidden by default. Visible on click */
+  min-width: 250px; /* Set a default minimum width */
+  margin-left: -125px; /* Divide value of min-width by 2 */
+  color: #fff; /* White text color */
+  text-align: center; /* Centered text */
+  border-radius: 2px; /* Rounded borders */
+  padding: 16px; /* Padding */
+  position: fixed; /* Sit on top of the screen */
+  z-index: 1; /* Add a z-index if needed */
+  left: 50%; /* Center the snackbar */
+  bottom: 30px; /* 30px from the bottom */
+  border-radius:5px;
+  background-color:#333;
+ 
+}
+
+/* Show the snackbar when clicking on a button (class added with JavaScript) */
+#snackbar.show {
+  visibility: visible; /* Show the snackbar */
+  /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+  However, delay the fade out process for 2.5 seconds */
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+/* Animations to fade the snackbar in and out */
+@-webkit-keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+
 
        
     </style>
@@ -155,7 +207,7 @@
      
         <div>
             <div class="">
-                <h2 class="text-2xl font-extrabold mt-12">mRNA alignments</h2>
+                <h2 class="text-2xl font-extrabold mt-12">miRNA alignments</h2>
                
             </div>
            
@@ -164,6 +216,8 @@ value=""
 
 rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
         </div>
+
+
 
         <div class="mt-3 flex h-10 justify-between">
             <div class="flex">
@@ -191,6 +245,41 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
         </div>
 
         <div>
+            <div class="">
+                <h2 class="text-2xl font-extrabold mt-12">Screened alignments (Highlights)</h2>
+               
+            </div>
+           
+<textarea name="screened" id="highlightParser" 
+value=""
+
+rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
+        </div>
+
+        <div class="mt-3 flex h-10 justify-between">
+            <div class="flex">
+                <a href="https://franziskaahrend.pythonanywhere.com/sitesScanner" target="_blank" class="px-4
+                text-sm font-medium tracking-wide text-white
+                capitalize bg-blue-500 bg-blue-700 hover:bg-blue-800 focus:ring-4
+                focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 flex items-center">
+                        Go To Ahrend Screening Tool
+                    </a>
+                    <a href="#!" onclick="copyFasta()" class="px-4   ml-3
+                text-sm font-medium tracking-wide text-white
+                capitalize bg-blue-500 bg-blue-700 hover:bg-blue-800 focus:ring-4
+                focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 flex items-center">
+                        Copy Fasta Sequence
+                    </a>
+            </div>
+            <a href="#!" onClick="addExtractedHighlight()" class="px-4   ml-3 
+                text-sm font-medium tracking-wide text-white 
+                capitalize bg-blue-500 bg-gray-700 hover:bg-blue-800 focus:ring-4 
+                focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 flex items-center">
+                Add Highlight
+            </a>
+
+            </div>
+        <div>
             <h2 class="text-2xl font-extrabold mt-12">SNP Viewer</h2>
         </div>
         <div id="output_table" class="mt-5">
@@ -199,6 +288,8 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
         <input type="text" value="" id="copyInput">
     </div>
 </div>
+
+<div id="snackbar">Some text some message..</div>
 </body>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
@@ -407,8 +498,8 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
 
                 currentTranscript.fasta = fasta.join('');
                 
-
-   
+                var absolute_position = 1;
+               
                 for (let i = 0; i < lines.length; i++) {
                     const element = lines[i];
   
@@ -422,7 +513,22 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
                     //output to output table, row by row, first item will be firstIndexOfRow, each element will be seperate column
                     let row = `<tr id='nucleotide_row_${firstIndexOfRow}'>`; // Create a new row
                     for(let j = 0; j < nucleotides.length; j++){
-                        row += `<td class="nucleotide-set-td">${nucleotides[j]}</td>`; // Add each element as a new column
+                        let nucleotideString = nucleotides[j];
+                        row += `<td class="nucleotide-set-td">`; // Add each element as a new column
+                       for(let k = 0; k < nucleotideString.length; k++){
+                           const nucleotide = nucleotideString.charAt(k);
+                       
+                           
+                           if(nucleotide == 'a' || nucleotide == 't' || nucleotide == 'c' || nucleotide == 'g'){
+                                row += `<span id="nucleotide_${absolute_position}">${nucleotide}</span>`;
+                               absolute_position++;
+                            }else{
+                                row += `<span id="counter_${absolute_position}">${nucleotide}</span>`;
+                            }
+                       }
+
+                      
+                        row += '</td>'
                     }
                     row += "</tr>"; // Close the row
                    
@@ -538,21 +644,15 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
         const mRNA_seq_length = mRNA_seq.length;  
 
         let lineSeq = data.matchLine;
-        console.log(lineSeq);
         // delete first n numbers of chars (data.mRNA_leadingWhiteSpace)
         lineSeq = lineSeq.substring(data.mRNA_leadingWhiteSpace);
-        console.log(lineSeq)
-
-        console.log('seq len', mRNA_seq_length)
+     
 
         let spacerSet = false;
         let j = 0;
         for(let i=0; i<data.seq_length; i++){
             j++;
             const index = Number(data.mRNA_leadingWhiteSpace)+j;
-            
-
-          
 
             const rowIndex = Math.floor((index - 1) / 60); // when appending, we need to add 1 to mirror DOM
             const relativeColumnIndex = index - (rowIndex * 60);
@@ -567,10 +667,6 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
             }else{
                
             }
-
-           
-
-            console.log('index: ', i, index, targetRow, relativeCellColumn+1, targetCellWithinTen, lineSeq.charAt(i))
 
             var row = $(`#mRNA_row_${targetRow}_0`); // get first additional SNP row
         
@@ -597,6 +693,8 @@ rows="3" class="w-full border border-gray-400" id="mRNA_alignment"></textarea>
 
             
         }
+
+        snackbar('success', 'Alignment added to index.');
 
     }
 
@@ -1016,10 +1114,6 @@ function getAlignmentValue(){
     const mRNA_leadingWhiteSpace = mRNA_line.match(/^\s*/)[0].length;
     const match_leadingWhiteSpace = matchLine.match(/^\s*/)[0].length;
 
-    console.log(mRNA_leadingWhiteSpace, match_leadingWhiteSpace)
-
-    //return alignmentText;
-
     return {
         alignment: alignmentText,
         mRNA_leadingWhiteSpace: mRNA_leadingWhiteSpace,
@@ -1032,7 +1126,6 @@ function getAlignmentValue(){
 }
 
 
-getAlignmentValue();
 
 function copyFasta(){
     // Get the text field
@@ -1051,10 +1144,155 @@ function copyFasta(){
     // Copy the text inside the text field
     navigator.clipboard.writeText(copyText.value);
     alert('Copied!');
-    
 }
 function getCurrentSequenceInFasta(){
     
+}
+
+function highlightNucleotideByPosition(position){
+    $(`#nucleotide_${position}`).addClass('bg-gray');
+}
+
+function highlightScreenedNucleotides(screenObj){
+
+}
+
+
+    var cpdata;
+    // if highlightParser recieves a PASTE, read the paste data and get highlighted text, and it's position in the paste
+
+    var currentExtractData;
+
+    document.getElementById('highlightParser').addEventListener('paste', function (event) {
+       
+        var clipboardData = (event.clipboardData || window.clipboardData);
+        var pastedData = clipboardData.getData('text');
+    
+        currentExtractData = extractHighlightedText(clipboardData.getData('text/html'));
+
+        // Do something with the highlighted text and its position
+    });
+
+    var matchCount = 0;
+
+    function addExtractedHighlight(){
+        if(currentExtractData==undefined){
+            snackbar('error', 'No highlighted text found in clipboard. Please highlight text and try again.')
+            return;
+        }else{
+            const extractData = currentExtractData;
+            for(var i = 0; i < extractData.matches.length; i++){
+            var match = extractData.matches[i];
+            const startIndex = match.startIndex+1;
+            const highlightLength = match.length;
+            for(var j = startIndex; j < startIndex+highlightLength; j++){
+                highlightNucleotideByPosition(j);
+            }
+            snackbar('success', 'Highlighted added.')
+        }
+        }
+    }
+
+    
+    function extractHighlightedText(data) {
+    
+        var spans = splitBySpanTagWithTags(data)
+      
+        let highlightMap = []
+        for(var i = 0; i < spans.length; i++){
+            var span = spans[i]
+            var spanText = span.inner;
+            var outer = span.outer;
+
+            if(containsBackgroundColor(outer)){
+                matchCount++;
+                highlightMap.push(1)
+            }else{
+                let pushText = spanText.replace(/&nbsp;/g, '').replace(/[0-9]/g, '').replace(/\s/g, '').replace(/\n/g, '').replace(/\t/g, '');
+
+                //remove it if it says //EndFragment
+                if(pushText.includes('EndFragment')){
+                    pushText = pushText.replace('EndFragment', '')
+                }
+                // or StartFragment
+                if(pushText.includes('StartFragment')){
+                    pushText = pushText.replace('StartFragment', '')
+                }
+              
+                // push in the length of the text of 0
+                for(var j = 0; j < pushText.length; j++){
+                    highlightMap.push(0)
+                }
+            }
+        }
+
+        function findMatches(inputString) {
+            var matches = [];
+            var startIndex = -1;
+
+            for (var i = 0; i < inputString.length; i++) {
+                if (inputString[i] === '1' && startIndex === -1) {
+                    startIndex = i;
+                } else if (inputString[i] === '0' && startIndex !== -1) {
+                    matches.push({ startIndex: startIndex, length: i - startIndex });
+                    startIndex = -1;
+                }
+            }
+
+            // If the last character is 1, add it as a match
+            if (startIndex !== -1) {
+                matches.push({ startIndex: startIndex, length: inputString.length - startIndex });
+            }
+
+        return matches;
+    }
+
+
+        return {
+            map: highlightMap,
+            flatMap: highlightMap.join(''),
+            matches: findMatches(highlightMap.join(''))
+        };
+    }
+
+
+
+function splitBySpanTagWithTags(htmlString) {
+    var el = document.createElement('div');
+    el.innerHTML = htmlString;
+
+    var textContents = [].map.call(el.childNodes, function(node) {
+        return {
+            outer: node.outerHTML,
+            inner: node.textContent
+        };
+    });
+
+    return textContents;
+}
+
+
+function containsBackgroundColor(inputString) {
+    var regex = /background-color\s*:\s*rgb\s*\(\s*211\s*,\s*211\s*,\s*211\s*\)/;
+    return regex.test(inputString);
+}
+
+function snackbar(type, message){
+ 
+    var x = document.getElementById("snackbar");
+
+// Add the "show" class to DIV
+x.className = "show";
+let color = '#27ae60';
+if(type=='error'){
+    color = '#e74c3c';
+}
+$(x).css('background-color', color);
+$(x).html(message);
+
+// After 3 seconds, remove the show class from DIV
+setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      
 }
 
 </script>
